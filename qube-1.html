@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qube — Food. Found. Fast.</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root[data-theme="light"]{--bg:#F5F2EC;--bg2:#EDEAE2;--card:#FFF;--text:#1A1A1A;--text2:#666;--accent:#E8451A;--accent2:#FF6B3D;--border:#E0DDD5;--shadow:rgba(0,0,0,0.08);--nav-bg:rgba(245,242,236,0.95);--tag-bg:#F0EDE5;--input-bg:#fff;--hero-grad:linear-gradient(135deg,#FFF8F5 0%,#F5F2EC 100%);}
+:root[data-theme="dark"]{--bg:#0E0E0D;--bg2:#1A1A18;--card:#1F1F1D;--text:#F0EDE5;--text2:#888;--accent:#E8451A;--accent2:#FF6B3D;--border:#2A2A28;--shadow:rgba(0,0,0,0.5);--nav-bg:rgba(14,14,13,0.95);--tag-bg:#252523;--input-bg:#1F1F1D;--hero-grad:linear-gradient(135deg,#1A1208 0%,#0E0E0D 100%);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s;overflow-x:hidden;}
+.page{display:none;min-height:100vh;}
+.page.active{display:block;}
+.app-page{padding-top:60px;padding-bottom:90px;}
+/* NAV */
+.app-nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--nav-bg);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--accent);cursor:pointer;}
+.logo span{color:var(--text);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.theme-btn{background:var(--tag-bg);border:1px solid var(--border);border-radius:20px;padding:5px 11px;cursor:pointer;font-size:12px;color:var(--text2);font-family:'DM Sans',sans-serif;}
+.cart-btn{background:var(--accent);color:#fff;border:none;border-radius:20px;padding:7px 13px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;}
+.user-chip{background:var(--tag-bg);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;}
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--nav-bg);backdrop-filter:blur(14px);border-top:1px solid var(--border);display:flex;padding:8px 0 18px;z-index:1000;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;color:var(--text2);font-size:10px;font-weight:500;transition:color .2s;}
+.nav-item.active{color:var(--accent);}
+.nav-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;}
+/* BUTTONS */
+.btn{border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;width:100%;transition:all .2s;}
+.btn-accent{background:var(--accent);color:#fff;}
+.btn-accent:hover{background:var(--accent2);}
+.btn-accent:disabled{opacity:.5;cursor:not-allowed;}
+.btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:transparent;color:#ef4444;border:1.5px solid #ef4444;}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:9px;width:auto;}
+/* FORMS */
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;}
+.form-label{font-size:12px;font-weight:500;color:var(--text2);}
+.form-input{background:var(--input-bg);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;width:100%;}
+.form-input:focus{border-color:var(--accent);}
+.input-row{display:flex;gap:8px;}
+.tab-row{display:flex;background:var(--tag-bg);border-radius:12px;padding:4px;gap:4px;margin-bottom:18px;}
+.tab{flex:1;padding:9px;border:none;background:transparent;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .2s;}
+.tab.active{background:var(--card);color:var(--accent);box-shadow:0 1px 4px var(--shadow);}
+/* AUTH */
+.auth-wrap{max-width:420px;margin:0 auto;padding:40px 20px 20px;}
+.auth-header{text-align:center;margin-bottom:26px;}
+.auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--accent);margin-bottom:4px;}
+.auth-logo span{color:var(--text);}
+.auth-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+.auth-sub{font-size:13px;color:var(--text2);}
+.auth-switch{text-align:center;font-size:13px;color:var(--text2);margin-top:14px;}
+.auth-switch a{color:var(--accent);cursor:pointer;font-weight:500;}
+.role-cards{display:flex;gap:10px;margin-bottom:18px;}
+.role-card{flex:1;background:var(--card);border:2px solid var(--border);border-radius:13px;padding:13px;text-align:center;cursor:pointer;transition:all .2s;}
+.role-card.selected{border-color:var(--accent);background:rgba(232,69,26,0.05);}
+.role-card-icon{font-size:24px;margin-bottom:5px;}
+.role-card-name{font-size:11px;font-weight:600;}
+.back-link{display:flex;align-items:center;gap:6px;color:var(--text2);font-size:13px;cursor:pointer;margin-bottom:18px;}
+.err-msg{color:#ef4444;font-size:12px;margin-bottom:10px;text-align:center;}
+/* LANDING */
+.landing-nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--nav-bg);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;}
+.landing-hero{padding:120px 24px 80px;text-align:center;background:var(--hero-grad);position:relative;overflow:hidden;}
+.landing-hero::before{content:'';position:absolute;top:-40%;left:-40%;width:180%;height:180%;background:radial-gradient(ellipse at 65% 35%,rgba(232,69,26,0.07) 0%,transparent 65%);pointer-events:none;}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;background:var(--tag-bg);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:var(--accent);margin-bottom:18px;}
+.landing-h1{font-family:'Syne',sans-serif;font-size:clamp(34px,9vw,62px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:16px;}
+.landing-h1 em{color:var(--accent);font-style:normal;}
+.landing-p{font-size:16px;color:var(--text2);max-width:460px;margin:0 auto 34px;line-height:1.65;}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.hbtn-p{background:var(--accent);color:#fff;border:none;border-radius:14px;padding:15px 26px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;}
+.hbtn-p:hover{background:var(--accent2);}
+.hbtn-s{background:var(--card);color:var(--text);border:1.5px solid var(--border);border-radius:14px;padding:14px 26px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.hbtn-s:hover{border-color:var(--accent);color:var(--accent);}
+.hero-stats{display:flex;justify-content:center;gap:36px;margin-top:50px;flex-wrap:wrap;}
+.hsn{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--accent);}
+.hsl{font-size:11px;color:var(--text2);margin-top:2px;}
+.l-section{padding:68px 24px;text-align:center;}
+.l-eyebrow{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.l-title{font-family:'Syne',sans-serif;font-size:clamp(22px,5vw,34px);font-weight:800;letter-spacing:-0.5px;margin-bottom:10px;}
+.l-sub{font-size:14px;color:var(--text2);max-width:420px;margin:0 auto 40px;line-height:1.6;}
+.steps{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.step{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;flex:1;min-width:180px;max-width:240px;text-align:center;}
+.step-num{width:38px;height:38px;background:var(--accent);color:#fff;border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin:0 auto 12px;}
+.step-icon{font-size:26px;margin-bottom:8px;}
+.step-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:5px;}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.55;}
+.features-bg{background:var(--bg2);padding:68px 24px;}
+.feat-grid{display:flex;flex-direction:column;gap:11px;max-width:540px;margin:0 auto;}
+.feat-item{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:16px;display:flex;gap:13px;}
+.feat-icon{font-size:26px;flex-shrink:0;}
+.feat-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px;}
+.feat-desc{font-size:12px;color:var(--text2);line-height:1.5;}
+.cta-banner{background:var(--accent);padding:56px 24px;text-align:center;}
+.cta-banner h2{font-family:'Syne',sans-serif;font-size:clamp(22px,5vw,34px);font-weight:800;color:#fff;margin-bottom:9px;letter-spacing:-0.5px;}
+.cta-banner p{color:rgba(255,255,255,.8);font-size:14px;margin-bottom:26px;}
+.cta-btns{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;}
+.cta-w{background:#fff;color:var(--accent);border:none;border-radius:13px;padding:13px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;}
+.cta-o{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.5);border-radius:13px;padding:12px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.footer{padding:36px 24px;border-top:1px solid var(--border);text-align:center;}
+/* HOME */
+.hero-sm{background:var(--hero-grad);padding:44px 20px 32px;text-align:center;position:relative;overflow:hidden;}
+.hero-sm::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 60% 40%,rgba(232,69,26,0.06) 0%,transparent 60%);pointer-events:none;}
+.hero-tag{display:inline-block;background:var(--tag-bg);border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:500;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:.4px;}
+.hero-sm h1{font-family:'Syne',sans-serif;font-size:clamp(24px,7vw,38px);font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:10px;}
+.hero-sm h1 em{color:var(--accent);font-style:normal;}
+.hero-sm p{font-size:14px;color:var(--text2);max-width:300px;margin:0 auto 22px;line-height:1.6;}
+.search-bar{display:flex;max-width:460px;margin:0 auto;background:var(--card);border:1.5px solid var(--border);border-radius:13px;overflow:hidden;box-shadow:0 4px 20px var(--shadow);}
+.search-bar input{flex:1;padding:12px 15px;border:none;outline:none;background:transparent;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;}
+.search-bar input::placeholder{color:var(--text2);}
+.search-bar button{background:var(--accent);color:#fff;border:none;padding:12px 16px;font-size:15px;cursor:pointer;}
+.stats-bar{display:flex;justify-content:center;gap:22px;padding:16px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.stat{text-align:center;}
+.stat-num{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--accent);}
+.stat-label{font-size:10px;color:var(--text2);margin-top:1px;}
+.section{padding:18px 15px;}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;}
+.section-ttl{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.cats{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;}
+.cats::-webkit-scrollbar{display:none;}
+.cat{flex-shrink:0;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:7px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:all .2s;min-width:58px;}
+.cat:hover,.cat.active{border-color:var(--accent);background:rgba(232,69,26,0.05);}
+.cat-icon{font-size:18px;}
+.cat-name{font-size:10px;font-weight:500;color:var(--text2);}
+.restaurants{display:flex;flex-direction:column;gap:12px;}
+.rest-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px var(--shadow);}
+.rest-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px var(--shadow);}
+.rest-top{display:flex;gap:11px;padding:12px 12px 0;}
+.rest-emoji-box{width:58px;height:58px;background:var(--bg2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;position:relative;}
+.rest-badge{position:absolute;top:-5px;right:-5px;background:var(--accent);color:#fff;border-radius:5px;padding:1px 5px;font-size:8px;font-weight:700;}
+.rest-info{flex:1;}
+.rest-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:3px;}
+.rest-meta{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text2);margin-bottom:4px;flex-wrap:wrap;}
+.rest-tags{display:flex;gap:4px;flex-wrap:wrap;}
+.tag{background:var(--tag-bg);border-radius:5px;padding:2px 6px;font-size:10px;color:var(--text2);}
+.mini-map-wrap{margin:8px 12px 12px;border-radius:9px;overflow:hidden;border:1px solid var(--border);position:relative;}
+.mini-map{height:88px;width:100%;background:var(--bg2);}
+.mini-map-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.55));padding:5px 8px;display:flex;gap:7px;}
+.map-chip{background:rgba(255,255,255,0.92);border-radius:20px;padding:2px 7px;font-size:10px;font-weight:600;color:#1A1A1A;}
+/* DETAIL */
+.detail-header{position:relative;height:180px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:54px;}
+.back-btn{position:absolute;top:12px;left:12px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text);font-family:'DM Sans',sans-serif;}
+.detail-info{padding:14px;border-bottom:1px solid var(--border);}
+.detail-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:5px;}
+.detail-meta-row{display:flex;gap:12px;color:var(--text2);font-size:12px;flex-wrap:wrap;}
+.full-map-section{margin:13px;border-radius:13px;overflow:hidden;border:1px solid var(--border);}
+.full-map{height:180px;width:100%;}
+.map-info-bar{background:var(--card);padding:10px 13px;display:flex;gap:13px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.map-info-item{display:flex;align-items:center;gap:5px;font-size:12px;}
+.map-info-val{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);}
+.menu-section{padding:0 14px 14px;}
+.menu-cat-title{font-size:10px;font-weight:700;margin:15px 0 8px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;}
+.menu-items{display:flex;flex-direction:column;gap:9px;}
+.menu-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px;display:flex;gap:9px;align-items:center;}
+.menu-item-emoji{font-size:28px;flex-shrink:0;}
+.menu-item-info{flex:1;}
+.menu-item-name{font-weight:600;font-size:13px;margin-bottom:2px;}
+.menu-item-desc{font-size:11px;color:var(--text2);line-height:1.4;}
+.menu-item-price{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);font-size:13px;margin-top:3px;}
+.add-btn{background:var(--accent);color:#fff;border:none;border-radius:9px;width:28px;height:28px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+/* CART */
+.cart-empty{text-align:center;padding:70px 24px;}
+.cart-empty-icon{font-size:54px;margin-bottom:12px;}
+.cart-empty h3{font-family:'Syne',sans-serif;font-size:16px;margin-bottom:6px;}
+.cart-empty p{color:var(--text2);font-size:13px;}
+.cart-items{padding:14px;display:flex;flex-direction:column;gap:9px;}
+.cart-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px;display:flex;align-items:center;gap:9px;}
+.cart-item-emoji{font-size:24px;}
+.cart-item-info{flex:1;}
+.cart-item-name{font-weight:600;font-size:13px;}
+.cart-item-rest{font-size:11px;color:var(--text2);}
+.cart-item-price{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);font-size:12px;}
+.qty-ctrl{display:flex;align-items:center;gap:5px;}
+.qty-btn{background:var(--tag-bg);border:1px solid var(--border);border-radius:7px;width:25px;height:25px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;color:var(--text);}
+.qty-num{font-weight:700;min-width:16px;text-align:center;font-size:13px;}
+.order-summary{margin:0 14px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;}
+.summary-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border);}
+.summary-row:last-child{border-bottom:none;}
+.summary-total{font-family:'Syne',sans-serif;font-weight:700;color:var(--text);font-size:14px;}
+/* CHECKOUT */
+.checkout-form{padding:14px;display:flex;flex-direction:column;}
+/* SUCCESS */
+.success-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:40px 24px;text-align:center;}
+.success-icon{font-size:62px;margin-bottom:15px;animation:bounce .6s ease;}
+@keyframes bounce{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.success-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:8px;}
+.success-sub{color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:22px;}
+.order-id-box{background:var(--tag-bg);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--accent);margin-bottom:22px;}
+/* DASHBOARD */
+.dash-section{padding:14px;}
+.dash-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:10px;}
+.dash-card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;}
+.dash-stat-row{display:flex;gap:8px;margin-bottom:10px;}
+.dash-stat{flex:1;background:var(--tag-bg);border-radius:9px;padding:9px;text-align:center;}
+.dash-stat-val{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--accent);}
+.dash-stat-label{font-size:10px;color:var(--text2);margin-top:1px;}
+/* ORDER ROWS */
+.order-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px;}
+.order-row:last-child{border-bottom:none;}
+.order-row-info{flex:1;}
+.order-row-id{font-weight:700;font-size:12px;}
+.order-row-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+.o-status{border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.s-pending{background:#FEF3C7;color:#D97706;}
+.s-confirmed{background:#DBEAFE;color:#2563EB;}
+.s-preparing{background:#EDE9FE;color:#7C3AED;}
+.s-ready{background:#DCFCE7;color:#16A34A;}
+.s-delivered{background:#F1F5F9;color:#475569;}
+/* MENU MANAGEMENT */
+.menu-manage-item{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px;display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.menu-manage-emoji{font-size:26px;flex-shrink:0;}
+.menu-manage-info{flex:1;}
+.menu-manage-name{font-weight:600;font-size:13px;}
+.menu-manage-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+.menu-manage-actions{display:flex;gap:6px;}
+.icon-btn{background:var(--tag-bg);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.icon-btn.del{border-color:#fca5a5;color:#ef4444;}
+/* ORDER HISTORY */
+.history-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:9px;}
+.history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.history-id{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;}
+.history-date{font-size:11px;color:var(--text2);}
+.history-items{font-size:12px;color:var(--text2);margin-bottom:6px;line-height:1.5;}
+.history-footer{display:flex;justify-content:space-between;align-items:center;}
+.history-total{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);font-size:14px;}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:4000;align-items:flex-end;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--card);border-radius:22px 22px 0 0;padding:22px;width:100%;max-width:480px;animation:slideUp .3s ease;max-height:90vh;overflow-y:auto;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:4px;}
+.modal-sub{color:var(--text2);font-size:12px;margin-bottom:15px;}
+.flw-btn{background:linear-gradient(135deg,#F5A623,#E8451A);color:#fff;border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;width:100%;font-family:'Syne',sans-serif;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:9px;}
+.secure-note{text-align:center;font-size:10px;color:var(--text2);margin-top:9px;}
+/* MAP */
+.loc-wrap{position:relative;}
+.loc-sugs{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:10px;z-index:500;max-height:140px;overflow-y:auto;box-shadow:0 8px 20px var(--shadow);}
+.loc-sug{padding:9px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);}
+.loc-sug:last-child{border-bottom:none;}
+.loc-sug:hover{background:var(--tag-bg);}
+.geo-ok{font-size:11px;color:#22c55e;margin-top:3px;}
+.geo-err{font-size:11px;color:#ef4444;margin-top:3px;}
+/* PROFILE */
+.profile-header{padding:28px 20px 18px;text-align:center;border-bottom:1px solid var(--border);}
+.profile-avatar{width:68px;height:68px;background:var(--accent);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;}
+.profile-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;}
+.profile-role{font-size:12px;color:var(--text2);margin-top:2px;}
+.profile-menu{padding:14px;}
+.profile-item{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:13px;display:flex;align-items:center;gap:11px;margin-bottom:8px;cursor:pointer;transition:all .2s;}
+.profile-item:hover{border-color:var(--accent);}
+.profile-item-icon{font-size:18px;}
+.profile-item-text{flex:1;}
+.profile-item-title{font-size:13px;font-weight:500;}
+.profile-item-sub{font-size:11px;color:var(--text2);margin-top:1px;}
+/* TOAST & LOADING */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:500;z-index:5000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:14px;}
+.loading-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:36px;color:var(--accent);}
+.loading-logo span{color:var(--text);}
+.loading-dots{display:flex;gap:6px;}
+.loading-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:ldot .8s ease-in-out infinite;}
+.loading-dot:nth-child(2){animation-delay:.15s;}
+.loading-dot:nth-child(3){animation-delay:.3s;}
+@keyframes ldot{0%,80%,100%{transform:scale(0.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.empty-state{text-align:center;padding:30px 20px;color:var(--text2);font-size:13px;}
+.empty-state-icon{font-size:40px;margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-logo">Q<span>ube</span></div>
+  <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+</div>
+
+<!-- ══════════ LANDING ══════════ -->
+<div class="page" id="page-landing">
+  <nav class="landing-nav">
+    <div class="logo">Q<span>ube</span></div>
+    <div class="nav-right">
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+      <button class="hbtn-s" style="padding:7px 14px;font-size:13px" onclick="showPage('login')">Log in</button>
+      <button class="hbtn-p" style="padding:8px 16px;font-size:13px" onclick="showPage('signup')">Sign up</button>
+    </div>
+  </nav>
+  <div class="landing-hero">
+    <div class="eyebrow">🍽️ Launching in Owerri, Nigeria</div>
+    <h1 class="landing-h1">Owerri's Food.<br><em>Delivered Fast.</em></h1>
+    <p class="landing-p">Qube connects you to the best local restaurants in Owerri. Browse menus, see real distances on a live map, and order in seconds.</p>
+    <div class="hero-btns">
+      <button class="hbtn-p" onclick="showPage('signup')">Order Food Now 🚀</button>
+      <button class="hbtn-s" onclick="showPage('signup-restaurant')">Add Your Restaurant</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="hsn">12+</div><div class="hsl">Restaurants</div></div>
+      <div class="stat"><div class="hsn">~30min</div><div class="hsl">Avg Delivery</div></div>
+      <div class="stat"><div class="hsn">₦0</div><div class="hsl">To Sign Up</div></div>
+      <div class="stat"><div class="hsn">92%</div><div class="hsl">Goes to Restaurants</div></div>
+    </div>
+  </div>
+  <div class="l-section">
+    <div class="l-eyebrow">How it works</div>
+    <div class="l-title">Order in 3 Simple Steps</div>
+    <div class="l-sub">No app download needed. Works right in your browser.</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-icon">🔍</div><div class="step-title">Discover</div><div class="step-desc">Browse restaurants near you with real distances on a live map.</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-icon">🛒</div><div class="step-title">Order</div><div class="step-desc">Pick your food, add to cart, checkout in under 2 minutes.</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-icon">🛵</div><div class="step-title">Delivered</div><div class="step-desc">Your food arrives hot and fresh.</div></div>
+    </div>
+  </div>
+  <div class="features-bg">
+    <div style="text-align:center;margin-bottom:32px"><div class="l-eyebrow">Why Qube</div><div class="l-title">Built for Owerri</div></div>
+    <div class="feat-grid">
+      <div class="feat-item"><div class="feat-icon">🗺️</div><div><div class="feat-title">Live Map & Distance</div><div class="feat-desc">See exactly how far each restaurant is with real-time distance and delivery time estimates.</div></div></div>
+      <div class="feat-item"><div class="feat-icon">💳</div><div><div class="feat-title">Secure Payments via Flutterwave</div><div class="feat-desc">Pay with card, bank transfer, USSD and more. 100% secure.</div></div></div>
+      <div class="feat-item"><div class="feat-icon">📊</div><div><div class="feat-title">Full Restaurant Dashboard</div><div class="feat-desc">Manage your menu, track orders, update status — all in real time.</div></div></div>
+      <div class="feat-item"><div class="feat-icon">📦</div><div><div class="feat-title">Order History</div><div class="feat-desc">Customers can track all their past orders and reorder with one tap.</div></div></div>
+    </div>
+  </div>
+  <div class="cta-banner">
+    <h2>Ready to Order?</h2>
+    <p>Join hundreds of Owerri residents already using Qube.</p>
+    <div class="cta-btns">
+      <button class="cta-w" onclick="showPage('signup')">Sign Up Free</button>
+      <button class="cta-o" onclick="showPage('login')">I Have an Account</button>
+    </div>
+  </div>
+  <div class="footer"><div class="logo" style="margin-bottom:6px">Q<span>ube</span></div><div style="font-size:12px;color:var(--text2)">Food. Found. Fast. — Owerri, Nigeria 🇳🇬</div></div>
+</div>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div class="page" id="page-login">
+  <div class="auth-wrap">
+    <div class="back-link" onclick="showPage('landing')">← Back</div>
+    <div class="auth-header"><div class="auth-logo">Q<span>ube</span></div><div class="auth-title">Welcome back 👋</div><div class="auth-sub">Log in to continue</div></div>
+    <div class="role-cards" id="login-roles">
+      <div class="role-card selected" onclick="selRole('customer',this)"><div class="role-card-icon">🛒</div><div class="role-card-name">Customer</div></div>
+      <div class="role-card" onclick="selRole('restaurant',this)"><div class="role-card-icon">🍽️</div><div class="role-card-name">Restaurant</div></div>
+      <div class="role-card" onclick="selRole('admin',this)"><div class="role-card-icon">⚙️</div><div class="role-card-name">Admin</div></div>
+    </div>
+    <div class="tab-row">
+      <button class="tab active" onclick="switchTab('li','email',this)">📧 Email</button>
+      <button class="tab" onclick="switchTab('li','phone',this)">📱 Phone</button>
+    </div>
+    <div id="li-email-form">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="li-email" placeholder="you@email.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="li-pass" placeholder="••••••••"></div>
+      <div id="li-err" class="err-msg" style="display:none"></div>
+      <button class="btn btn-accent" id="li-btn" onclick="doLogin()">Log In →</button>
+    </div>
+    <div id="li-phone-form" style="display:none">
+      <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" type="tel" id="li-phone" placeholder="08012345678"></div>
+      <button class="btn btn-accent" onclick="sendOTP('login')">Send OTP →</button>
+    </div>
+    <div class="auth-switch">No account? <a onclick="showPage('signup')">Sign up</a></div>
+  </div>
+</div>
+
+<!-- ══════════ SIGNUP CUSTOMER ══════════ -->
+<div class="page" id="page-signup">
+  <div class="auth-wrap">
+    <div class="back-link" onclick="showPage('landing')">← Back</div>
+    <div class="auth-header"><div class="auth-logo">Q<span>ube</span></div><div class="auth-title">Create Account</div><div class="auth-sub">Sign up to start ordering 🍔</div></div>
+    <div class="tab-row">
+      <button class="tab active" onclick="switchTab('su','email',this)">📧 Email</button>
+      <button class="tab" onclick="switchTab('su','phone',this)">📱 Phone</button>
+    </div>
+    <div id="su-email-form">
+      <div class="input-row">
+        <div class="form-group" style="flex:1"><label class="form-label">First Name</label><input class="form-input" type="text" id="su-fname" placeholder="Ada"></div>
+        <div class="form-group" style="flex:1"><label class="form-label">Last Name</label><input class="form-input" type="text" id="su-lname" placeholder="Obi"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="su-email" placeholder="ada@email.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="su-pass" placeholder="Min 8 characters"></div>
+      <div id="su-err" class="err-msg" style="display:none"></div>
+      <button class="btn btn-accent" id="su-btn" onclick="doSignup()">Create Account →</button>
+    </div>
+    <div id="su-phone-form" style="display:none">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" id="su-name-p" placeholder="Ada Obi"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-input" type="tel" id="su-phone-p" placeholder="08012345678"></div>
+      <button class="btn btn-accent" onclick="sendOTP('signup')">Send OTP →</button>
+    </div>
+    <div class="auth-switch">Have account? <a onclick="showPage('login')">Log in</a></div>
+    <div class="auth-switch" style="margin-top:6px">Restaurant owner? <a onclick="showPage('signup-restaurant')">Register here</a></div>
+  </div>
+</div>
+
+<!-- ══════════ SIGNUP RESTAURANT ══════════ -->
+<div class="page" id="page-signup-restaurant">
+  <div class="auth-wrap">
+    <div class="back-link" onclick="showPage('landing')">← Back</div>
+    <div class="auth-header"><div class="auth-logo">Q<span>ube</span></div><div class="auth-title">List Your Restaurant 🍽️</div><div class="auth-sub">Join Qube — reach thousands of customers</div></div>
+    <div class="form-group"><label class="form-label">Restaurant Name</label><input class="form-input" type="text" id="r-name" placeholder="e.g. Mama Tee's Kitchen"></div>
+    <div class="form-group"><label class="form-label">Owner's Full Name</label><input class="form-input" type="text" id="r-owner" placeholder="Chioma Tee"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="r-email" placeholder="restaurant@email.com"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" type="tel" id="r-phone" placeholder="08012345678"></div>
+    <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="r-pass" placeholder="Min 8 characters"></div>
+    <div class="form-group"><label class="form-label">Food Category</label>
+      <select class="form-input" id="r-cat"><option>Local Nigerian Dishes</option><option>Grills & BBQ</option><option>Rice & Soups</option><option>Fast Food & Snacks</option><option>Continental</option><option>Drinks & Bar</option></select>
+    </div>
+    <div style="background:rgba(232,69,26,0.06);border:1px solid rgba(232,69,26,0.2);border-radius:10px;padding:11px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6">💡 Qube charges <b style="color:var(--accent)">8% commission</b> per order. You keep <b style="color:var(--accent)">92%</b>. Listing is <b>free</b>.</div>
+    <div id="r-err" class="err-msg" style="display:none"></div>
+    <button class="btn btn-accent" id="r-btn" onclick="doRestaurantSignup()">Register Restaurant →</button>
+    <div class="auth-switch" style="margin-top:14px">Already registered? <a onclick="showPage('login')">Log in</a></div>
+  </div>
+</div>
+
+<!-- ══════════ OTP ══════════ -->
+<div class="page" id="page-otp">
+  <div class="auth-wrap" style="padding-top:60px">
+    <div class="auth-header">
+      <div style="font-size:46px;margin-bottom:11px">📱</div>
+      <div class="auth-title">Enter OTP</div>
+      <div class="auth-sub" id="otp-sub">We sent a 6-digit code to your number</div>
+    </div>
+    <div class="otp-inputs" style="display:flex;gap:8px;justify-content:center;margin:14px 0">
+      <input style="width:46px;height:50px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:var(--input-bg);border:2px solid var(--border);border-radius:11px;color:var(--text);outline:none;" type="tel" maxlength="1" id="otp1" oninput="otpMove(this,'otp2')">
+      <input style="width:46px;height:50px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:var(--input-bg);border:2px solid var(--border);border-radius:11px;color:var(--text);outline:none;" type="tel" maxlength="1" id="otp2" oninput="otpMove(this,'otp3')">
+      <input style="width:46px;height:50px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:var(--input-bg);border:2px solid var(--border);border-radius:11px;color:var(--text);outline:none;" type="tel" maxlength="1" id="otp3" oninput="otpMove(this,'otp4')">
+      <input style="width:46px;height:50px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:var(--input-bg);border:2px solid var(--border);border-radius:11px;color:var(--text);outline:none;" type="tel" maxlength="1" id="otp4" oninput="otpMove(this,'otp5')">
+      <input style="width:46px;height:50px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:var(--input-bg);border:2px solid var(--border);border-radius:11px;color:var(--text);outline:none;" type="tel" maxlength="1" id="otp5" oninput="otpMove(this,'otp6')">
+      <input style="width:46px;height:50px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:var(--input-bg);border:2px solid var(--border);border-radius:11px;color:var(--text);outline:none;" type="tel" maxlength="1" id="otp6" oninput="otpMove(this,null)">
+    </div>
+    <button class="btn btn-accent" onclick="verifyOTP()">Verify →</button>
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text2)">Didn't get it? <span style="color:var(--accent);cursor:pointer" onclick="showToast('OTP resent!')">Resend</span></div>
+  </div>
+</div>
+
+<!-- ══════════ APP SHELL ══════════ -->
+<nav class="app-nav" id="app-nav" style="display:none">
+  <div class="logo" onclick="showPage('home')">Q<span>ube</span></div>
+  <div class="nav-right">
+    <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+    <span class="user-chip" onclick="showPage('profile')" id="user-chip">👤 Me</span>
+    <button class="cart-btn" onclick="showPage('cart')">🛒 <span id="cart-count">0</span></button>
+  </div>
+</nav>
+<div class="bottom-nav" id="bottom-nav" style="display:none">
+  <div class="nav-item active" id="nav-home" onclick="showPage('home')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+  </div>
+  <div class="nav-item" id="nav-orders" onclick="showPage('orders')">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Orders
+  </div>
+  <div class="nav-item" id="nav-cart" onclick="showPage('cart')">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 001.97 1.61h9.72a2 2 0 001.97-1.61L23 6H6"/></svg>Cart
+  </div>
+  <div class="nav-item" id="nav-dash" onclick="showDash()">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dash
+  </div>
+  <div class="nav-item" id="nav-profile" onclick="showPage('profile')">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile
+  </div>
+</div>
+
+<!-- ══════════ HOME ══════════ -->
+<div class="page app-page" id="page-home">
+  <div class="hero-sm">
+    <div class="hero-tag">🍽️ Owerri's #1 Food Platform</div>
+    <h1>Food. <em>Found.</em><br>Delivered Fast.</h1>
+    <p>Discover the best restaurants near you.</p>
+    <div class="search-bar"><input type="text" placeholder="Search restaurants or dishes..." id="search-input" oninput="applyFilters()"><button>🔍</button></div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-num" id="rest-count">—</div><div class="stat-label">Restaurants</div></div>
+    <div class="stat"><div class="stat-num">~30min</div><div class="stat-label">Avg Delivery</div></div>
+    <div class="stat"><div class="stat-num">500+</div><div class="stat-label">Customers</div></div>
+  </div>
+  <div class="section">
+    <div class="section-hdr"><div class="section-ttl">Categories</div></div>
+    <div class="cats">
+      <div class="cat active" onclick="filterCat('all',this)"><div class="cat-icon">🍽️</div><div class="cat-name">All</div></div>
+      <div class="cat" onclick="filterCat('local',this)"><div class="cat-icon">🍲</div><div class="cat-name">Local</div></div>
+      <div class="cat" onclick="filterCat('grills',this)"><div class="cat-icon">🍖</div><div class="cat-name">Grills</div></div>
+      <div class="cat" onclick="filterCat('rice',this)"><div class="cat-icon">🍚</div><div class="cat-name">Rice</div></div>
+      <div class="cat" onclick="filterCat('snacks',this)"><div class="cat-icon">🥪</div><div class="cat-name">Snacks</div></div>
+      <div class="cat" onclick="filterCat('drinks',this)"><div class="cat-icon">🥤</div><div class="cat-name">Drinks</div></div>
+    </div>
+  </div>
+  <div class="section" style="padding-top:0">
+    <div class="section-hdr"><div class="section-ttl">Restaurants Near You</div></div>
+    <div class="restaurants" id="restaurant-list"><div style="text-align:center;padding:40px;color:var(--text2)">Loading restaurants... 🍽️</div></div>
+  </div>
+</div>
+
+<!-- ══════════ DETAIL ══════════ -->
+<div class="page app-page" id="page-detail">
+  <div class="detail-header"><button class="back-btn" onclick="showPage('home')">← Back</button><span id="detail-emoji">🍽️</span></div>
+  <div class="detail-info"><div class="detail-name" id="detail-name"></div><div class="detail-meta-row" id="detail-meta"></div></div>
+  <div class="full-map-section"><div class="full-map" id="full-map"></div>
+    <div class="map-info-bar">
+      <div class="map-info-item">📍 <span class="map-info-val" id="map-dist">—</span>&nbsp;<span style="color:var(--text2)">away</span></div>
+      <div class="map-info-item">🕐 <span class="map-info-val" id="map-time">—</span>&nbsp;<span style="color:var(--text2)">delivery</span></div>
+      <div class="map-info-item" style="font-size:11px;color:var(--text2)" id="map-addr"></div>
+    </div>
+  </div>
+  <div class="menu-section" id="menu-section"></div>
+</div>
+
+<!-- ══════════ CART ══════════ -->
+<div class="page app-page" id="page-cart">
+  <div style="padding:18px 14px 0"><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800">Your Order 🛒</div></div>
+  <div id="cart-content"></div>
+</div>
+
+<!-- ══════════ CHECKOUT ══════════ -->
+<div class="page app-page" id="page-checkout">
+  <div style="padding:18px 14px 0;display:flex;align-items:center;gap:11px">
+    <button class="back-btn" style="position:static" onclick="showPage('cart')">← Back</button>
+    <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800">Checkout</div>
+  </div>
+  <div class="checkout-form">
+    <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" id="co-name" placeholder="John Doe"></div>
+    <div class="form-group"><label class="form-label">Phone</label><input class="form-input" type="tel" id="co-phone" placeholder="08012345678"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="co-email" placeholder="john@email.com"></div>
+    <div class="form-group"><label class="form-label">Delivery Address</label><input class="form-input" type="text" id="co-address" placeholder="e.g. 5 Douglas Road, Owerri"></div>
+    <div class="form-group"><label class="form-label">Notes (optional)</label><input class="form-input" type="text" id="co-notes" placeholder="Special instructions..."></div>
+    <div id="checkout-summary"></div>
+    <button class="btn btn-accent" onclick="initiatePayment()">💳 Pay with Flutterwave</button>
+  </div>
+</div>
+
+<!-- ══════════ SUCCESS ══════════ -->
+<div class="page app-page" id="page-success">
+  <div class="success-page">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">Order Placed!</div>
+    <div class="success-sub">Your food is being prepared.<br>Estimated delivery: 25–40 min.</div>
+    <div class="order-id-box" id="order-id-display">#QUBE-00001</div>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:260px">
+      <button class="btn btn-accent" onclick="showPage('orders')">Track My Order 📦</button>
+      <button class="btn btn-outline" onclick="showPage('home')">Order More Food</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ORDER HISTORY (Customer) ══════════ -->
+<div class="page app-page" id="page-orders">
+  <div style="padding:18px 14px 0">
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800">My Orders 📦</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:3px">Track and manage your orders</div>
+  </div>
+  <div style="padding:14px" id="orders-content">
+    <div style="text-align:center;padding:40px;color:var(--text2)">Loading orders... 📦</div>
+  </div>
+</div>
+
+<!-- ══════════ DASHBOARD (Restaurant) ══════════ -->
+<div class="page app-page" id="page-dashboard">
+  <div style="padding:18px 14px 6px">
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800">Dashboard 🍽️</div>
+    <div style="font-size:12px;color:var(--text2);margin-top:2px">Restaurant Management</div>
+  </div>
+  <!-- Dashboard tabs -->
+  <div style="padding:0 14px">
+    <div class="tab-row">
+      <button class="tab active" onclick="switchDashTab('orders',this)">📦 Orders</button>
+      <button class="tab" onclick="switchDashTab('menu',this)">🍽️ Menu</button>
+      <button class="tab" onclick="switchDashTab('location',this)">📍 Location</button>
+    </div>
+  </div>
+
+  <!-- Orders Tab -->
+  <div id="dash-tab-orders" class="dash-section">
+    <div class="dash-stat-row">
+      <div class="dash-stat"><div class="dash-stat-val" id="d-orders">—</div><div class="dash-stat-label">Today</div></div>
+      <div class="dash-stat"><div class="dash-stat-val" id="d-revenue">—</div><div class="dash-stat-label">Revenue</div></div>
+      <div class="dash-stat"><div class="dash-stat-val" id="d-pending">—</div><div class="dash-stat-label">Pending</div></div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-title">🔔 Live Orders <span style="font-size:11px;font-weight:400;color:var(--text2)" onclick="loadDashOrders()" style="cursor:pointer">↻ Refresh</span></div>
+      <div id="live-orders"><div class="empty-state"><div class="empty-state-icon">📭</div>No orders yet</div></div>
+    </div>
+    <div class="dash-card" style="background:rgba(232,69,26,0.04);border-color:rgba(232,69,26,0.2)">
+      <div class="dash-card-title">💰 Commission</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7">Qube takes <b style="color:var(--accent)">8% per order</b>. You keep <b style="color:var(--accent)">92%</b> of every sale.</div>
+    </div>
+  </div>
+
+  <!-- Menu Management Tab -->
+  <div id="dash-tab-menu" class="dash-section" style="display:none">
+    <div class="dash-card">
+      <div class="dash-card-title">➕ Add Menu Item</div>
+      <div class="input-row">
+        <div class="form-group" style="flex:1"><label class="form-label">Name</label><input class="form-input" type="text" id="mi-name" placeholder="Jollof Rice"></div>
+        <div class="form-group" style="width:70px"><label class="form-label">Emoji</label><input class="form-input" type="text" id="mi-emoji" placeholder="🍚" maxlength="2"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><input class="form-input" type="text" id="mi-desc" placeholder="Describe the dish..."></div>
+      <div class="input-row">
+        <div class="form-group" style="flex:1"><label class="form-label">Price (₦)</label><input class="form-input" type="number" id="mi-price" placeholder="2000"></div>
+        <div class="form-group" style="flex:1"><label class="form-label">Category</label><input class="form-input" type="text" id="mi-cat" placeholder="e.g. Rice Dishes"></div>
+      </div>
+      <button class="btn btn-accent" onclick="addMenuItem()">➕ Add Item</button>
+    </div>
+    <div class="dash-card">
+      <div class="dash-card-title">📋 Your Menu <span style="font-size:11px;font-weight:400;color:var(--text2)" id="menu-count"></span></div>
+      <div id="menu-manage-list"><div class="empty-state"><div class="empty-state-icon">🍽️</div>No menu items yet. Add your first item above!</div></div>
+    </div>
+  </div>
+
+  <!-- Location Tab -->
+  <div id="dash-tab-location" class="dash-section" style="display:none">
+    <div class="dash-card">
+      <div class="dash-card-title">📍 Restaurant Location</div>
+      <div class="form-group">
+        <label class="form-label">Type your address — auto-converts to map pin</label>
+        <div class="loc-wrap">
+          <input class="form-input" type="text" id="rest-addr" placeholder="e.g. 12 Wetheral Road, Owerri" oninput="onAddrType()" autocomplete="off">
+          <div class="loc-sugs" id="loc-sugs" style="display:none"></div>
+        </div>
+        <div id="geo-status"></div>
+      </div>
+      <button class="btn btn-accent" style="margin-top:9px" onclick="saveLocation()">📍 Save & Pin on Map</button>
+      <div style="margin-top:10px;border-radius:9px;overflow:hidden;border:1px solid var(--border)">
+        <div id="dash-map" style="height:180px;width:100%;background:var(--bg2)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PROFILE ══════════ -->
+<div class="page app-page" id="page-profile">
+  <div class="profile-header">
+    <div class="profile-avatar" id="profile-avatar">👤</div>
+    <div class="profile-name" id="profile-name">User</div>
+    <div class="profile-role" id="profile-role">Customer</div>
+  </div>
+  <div class="profile-menu">
+    <div class="profile-item" onclick="showPage('orders')"><div class="profile-item-icon">📦</div><div class="profile-item-text"><div class="profile-item-title">My Orders</div><div class="profile-item-sub">View your order history</div></div><span style="color:var(--text2)">›</span></div>
+    <div class="profile-item" onclick="showToast('Coming soon!')"><div class="profile-item-icon">📍</div><div class="profile-item-text"><div class="profile-item-title">Saved Addresses</div><div class="profile-item-sub">Manage delivery locations</div></div><span style="color:var(--text2)">›</span></div>
+    <div class="profile-item" onclick="toggleTheme()"><div class="profile-item-icon">🌙</div><div class="profile-item-text"><div class="profile-item-title">Dark / Light Mode</div><div class="profile-item-sub">Toggle theme</div></div><span style="color:var(--text2)">›</span></div>
+    <div class="profile-item" style="border-color:rgba(232,69,26,.3)" onclick="doLogout()"><div class="profile-item-icon">🚪</div><div class="profile-item-text"><div class="profile-item-title" style="color:var(--accent)">Log Out</div><div class="profile-item-sub">Sign out of account</div></div></div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="pay-modal">
+  <div class="modal">
+    <div class="modal-title">Complete Payment 💳</div>
+    <div class="modal-sub" id="modal-amt">Pay ₦0 securely via Flutterwave</div>
+    <button class="flw-btn" onclick="processPayment()">⚡ Pay Now with Flutterwave</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal()">Cancel</button>
+    <div class="secure-note">🔒 Secured by Flutterwave • SSL Encrypted</div>
+  </div>
+</div>
+
+<!-- EDIT MENU ITEM MODAL -->
+<div class="modal-overlay" id="edit-menu-modal">
+  <div class="modal">
+    <div class="modal-title">Edit Menu Item ✏️</div>
+    <input type="hidden" id="edit-mi-id">
+    <div class="input-row">
+      <div class="form-group" style="flex:1"><label class="form-label">Name</label><input class="form-input" type="text" id="edit-mi-name"></div>
+      <div class="form-group" style="width:70px"><label class="form-label">Emoji</label><input class="form-input" type="text" id="edit-mi-emoji" maxlength="2"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Description</label><input class="form-input" type="text" id="edit-mi-desc"></div>
+    <div class="input-row">
+      <div class="form-group" style="flex:1"><label class="form-label">Price (₦)</label><input class="form-input" type="number" id="edit-mi-price"></div>
+      <div class="form-group" style="flex:1"><label class="form-label">Category</label><input class="form-input" type="text" id="edit-mi-cat"></div>
+    </div>
+    <button class="btn btn-accent" onclick="saveMenuEdit()">Save Changes ✓</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeEditModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- ORDER STATUS MODAL -->
+<div class="modal-overlay" id="status-modal">
+  <div class="modal">
+    <div class="modal-title">Update Order Status 📦</div>
+    <div class="modal-sub" id="status-modal-order"></div>
+    <input type="hidden" id="status-order-id">
+    <div style="display:flex;flex-direction:column;gap:9px;margin-top:4px">
+      <button class="btn" style="background:#FEF3C7;color:#D97706;border-radius:11px;padding:12px" onclick="updateStatus('confirmed')">✅ Confirmed</button>
+      <button class="btn" style="background:#EDE9FE;color:#7C3AED;border-radius:11px;padding:12px" onclick="updateStatus('preparing')">👨‍🍳 Preparing</button>
+      <button class="btn" style="background:#DCFCE7;color:#16A34A;border-radius:11px;padding:12px" onclick="updateStatus('ready')">🔔 Ready for Pickup</button>
+      <button class="btn" style="background:#F1F5F9;color:#475569;border-radius:11px;padding:12px" onclick="updateStatus('delivered')">🛵 Delivered</button>
+    </div>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="closeStatusModal()">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'https://zjkpgwyknszdaahk1zxz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_sEhYrn4E6F6lFP906Lkn_A_I0X9AI7s';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let currentUser = null, currentProfile = null;
+let otpCtx = null, loginRole = 'customer';
+let allRestaurants = [], cart = [];
+let currentRestaurantId = null; // restaurant owner's restaurant id
+
+// ══════════════════════════════════════════
+// FALLBACK DATA
+// ══════════════════════════════════════════
+const FALLBACK = [
+  {id:'f1',name:"Mama Tee's Kitchen",emoji:"🍲",rating:4.8,delivery_fee:300,tags:["Local Dishes","Soups"],cats:["local","rice"],badge:"Popular",address:"Wetheral Road, Owerri",lat:5.4836,lng:7.0344,
+   menu:[{cat:"Soups",items:[{name:"Ofe Onugbu",description:"Rich bitter leaf soup",price:2500,emoji:"🥘"},{name:"Egusi Soup",description:"Melon seed soup",price:2200,emoji:"🍲"}]},{cat:"Rice",items:[{name:"Jollof Rice + Chicken",description:"Party jollof rice",price:2000,emoji:"🍚"}]}]},
+  {id:'f2',name:"ChopSpot Owerri",emoji:"🍖",rating:4.6,delivery_fee:250,tags:["Grills","Suya"],cats:["grills"],badge:"Fast",address:"Douglas Road, Owerri",lat:5.4860,lng:7.0310,
+   menu:[{cat:"Grills",items:[{name:"Peppered Gizzard",description:"Spicy grilled gizzard",price:1500,emoji:"🍗"},{name:"Suya Wrap",description:"Spiced suya in flatbread",price:1800,emoji:"🌯"}]}]},
+  {id:'f3',name:"Campus Bites FUTO",emoji:"🥗",rating:4.5,delivery_fee:200,tags:["Budget","Student"],cats:["rice","snacks"],badge:"Near FUTO",address:"FUTO, Owerri",lat:5.3954,lng:7.0010,
+   menu:[{cat:"Budget",items:[{name:"Rice & Stew",description:"White rice with stew",price:800,emoji:"🍚"},{name:"Indomie + Egg",description:"Spicy noodles",price:600,emoji:"🍜"}]}]},
+  {id:'f4',name:"Riverside Grill & Bar",emoji:"🥩",rating:4.7,delivery_fee:400,tags:["Grills","Premium"],cats:["grills","drinks"],badge:"Premium",address:"PH Road, Owerri",lat:5.4720,lng:7.0420,
+   menu:[{cat:"Grills",items:[{name:"T-Bone Steak",description:"Grilled with herb butter",price:7500,emoji:"🥩"},{name:"Catfish Pepper Soup",description:"Fresh catfish in spicy broth",price:4500,emoji:"🐟"}]}]}
+];
+const USER_LOC = {lat:5.4841, lng:7.0350};
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { await loadProfile(session.user); enterApp(); }
+  else showPage('landing');
+  document.getElementById('loading').style.display = 'none';
+}
+
+async function loadProfile(user) {
+  currentUser = user;
+  const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentProfile = data;
+  if (data) {
+    const name = (data.full_name || 'User').split(' ')[0];
+    document.getElementById('user-chip').textContent = `👤 ${name}`;
+    document.getElementById('profile-name').textContent = data.full_name || 'User';
+    document.getElementById('profile-role').textContent = data.role === 'admin' ? '⚙️ Admin' : data.role === 'restaurant' ? '🍽️ Restaurant Owner' : '🛒 Customer';
+    document.getElementById('profile-avatar').textContent = data.role === 'admin' ? '⚙️' : data.role === 'restaurant' ? '🍽️' : '🛒';
+    if (user.email) document.getElementById('co-email').value = user.email;
+    if (data.full_name) document.getElementById('co-name').value = data.full_name;
+    if (data.phone) document.getElementById('co-phone').value = data.phone;
+    // Load restaurant id for owner
+    if (data.role === 'restaurant') {
+      const { data: rest } = await sb.from('restaurants').select('id').eq('owner_id', user.id).single();
+      if (rest) currentRestaurantId = rest.id;
+    }
+  }
+}
+
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+function selRole(role, el) { loginRole = role; document.querySelectorAll('#login-roles .role-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); }
+function switchTab(prefix, type, el) {
+  const page = prefix === 'li' ? 'login' : 'signup';
+  document.querySelectorAll(`#page-${page} .tab`).forEach(t => t.classList.remove('active')); el.classList.add('active');
+  document.getElementById(`${prefix}-email-form`).style.display = type === 'email' ? 'block' : 'none';
+  document.getElementById(`${prefix}-phone-form`).style.display = type === 'phone' ? 'block' : 'none';
+}
+async function doLogin() {
+  const email = document.getElementById('li-email').value.trim(), pass = document.getElementById('li-pass').value;
+  if (!email || !pass) { showErr('li-err', 'Please fill all fields'); return; }
+  setLoading('li-btn', true, 'Log In →');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { showErr('li-err', error.message); setLoading('li-btn', false, 'Log In →'); return; }
+  await loadProfile(data.user); enterApp();
+}
+async function doSignup() {
+  const fname = document.getElementById('su-fname').value.trim(), lname = document.getElementById('su-lname').value.trim();
+  const email = document.getElementById('su-email').value.trim(), pass = document.getElementById('su-pass').value;
+  if (!fname || !email || !pass) { showErr('su-err', 'Please fill all required fields'); return; }
+  if (pass.length < 8) { showErr('su-err', 'Password must be at least 8 characters'); return; }
+  setLoading('su-btn', true, 'Create Account →');
+  const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: `${fname} ${lname}`.trim(), role: 'customer' } } });
+  if (error) { showErr('su-err', error.message); setLoading('su-btn', false, 'Create Account →'); return; }
+  showToast('✅ Account created!');
+  await loadProfile(data.user); enterApp();
+}
+async function doRestaurantSignup() {
+  const rname = document.getElementById('r-name').value.trim(), owner = document.getElementById('r-owner').value.trim();
+  const email = document.getElementById('r-email').value.trim(), pass = document.getElementById('r-pass').value;
+  if (!rname || !owner || !email || !pass) { showErr('r-err', 'Please fill all required fields'); return; }
+  setLoading('r-btn', true, 'Register Restaurant →');
+  const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: owner, role: 'restaurant', phone: document.getElementById('r-phone').value } } });
+  if (error) { showErr('r-err', error.message); setLoading('r-btn', false, 'Register Restaurant →'); return; }
+  if (data.user) {
+    const { data: rest } = await sb.from('restaurants').insert({ owner_id: data.user.id, name: rname, category: document.getElementById('r-cat').value, emoji: '🍽️' }).select().single();
+    if (rest) currentRestaurantId = rest.id;
+  }
+  showToast('🎉 Restaurant registered!');
+  await loadProfile(data.user); enterApp();
+}
+function sendOTP(ctx) { otpCtx = ctx; const phone = ctx === 'login' ? document.getElementById('li-phone').value : document.getElementById('su-phone-p').value; if (!phone) { showToast('⚠️ Enter phone number'); return; } document.getElementById('otp-sub').textContent = `Code sent to ${phone}`; showPage('otp'); }
+function otpMove(el, nextId) { if (el.value && nextId) document.getElementById(nextId).focus(); }
+function verifyOTP() { const code = ['otp1','otp2','otp3','otp4','otp5','otp6'].map(id => document.getElementById(id).value).join(''); if (code.length < 6) return; currentUser = {id:'phone-'+Date.now()}; currentProfile = {full_name:'User',role:loginRole}; enterApp(); }
+async function doLogout() { await sb.auth.signOut(); currentUser = null; currentProfile = null; cart = []; updateCount(); document.getElementById('app-nav').style.display='none'; document.getElementById('bottom-nav').style.display='none'; showPage('landing'); showToast('👋 Logged out'); }
+
+// ══════════════════════════════════════════
+// LOAD RESTAURANTS
+// ══════════════════════════════════════════
+async function loadRestaurants() {
+  const { data } = await sb.from('restaurants').select('*, menu_items(*)').eq('is_active', true);
+  if (!data || data.length === 0) { allRestaurants = FALLBACK; }
+  else { allRestaurants = data.map(r => ({ ...r, tags: [r.category || 'Food'], cats: ['local'], badge: null, menu: groupMenu(r.menu_items || []) })); }
+  document.getElementById('rest-count').textContent = allRestaurants.length + '+';
+  renderList(allRestaurants);
+}
+function groupMenu(items) {
+  const cats = {};
+  items.forEach(i => { if (!cats[i.category]) cats[i.category] = []; cats[i.category].push(i); });
+  return Object.entries(cats).map(([cat, items]) => ({cat, items}));
+}
+
+// ══════════════════════════════════════════
+// ██████████ CRUD: MENU MANAGEMENT ████████
+// ══════════════════════════════════════════
+
+// CREATE menu item
+async function addMenuItem() {
+  const name = document.getElementById('mi-name').value.trim();
+  const price = parseInt(document.getElementById('mi-price').value);
+  const desc = document.getElementById('mi-desc').value.trim();
+  const emoji = document.getElementById('mi-emoji').value.trim() || '🍽️';
+  const cat = document.getElementById('mi-cat').value.trim() || 'Main Menu';
+  if (!name || !price) { showToast('⚠️ Name and price are required'); return; }
+  if (!currentRestaurantId) { showToast('⚠️ No restaurant found for your account'); return; }
+  const { data, error } = await sb.from('menu_items').insert({ restaurant_id: currentRestaurantId, name, description: desc, price, emoji, category: cat, is_available: true }).select().single();
+  if (error) { showToast('❌ Error: ' + error.message); return; }
+  showToast('✅ Menu item added!');
+  // Clear form
+  ['mi-name','mi-desc','mi-emoji','mi-price','mi-cat'].forEach(id => document.getElementById(id).value = '');
+  loadMenuItems();
+}
+
+// READ menu items
+async function loadMenuItems() {
+  if (!currentRestaurantId) return;
+  const { data } = await sb.from('menu_items').select('*').eq('restaurant_id', currentRestaurantId).order('category').order('created_at');
+  const el = document.getElementById('menu-manage-list');
+  const count = document.getElementById('menu-count');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🍽️</div>No menu items yet. Add your first item above!</div>';
+    count.textContent = '';
+    return;
+  }
+  count.textContent = `(${data.length} items)`;
+  el.innerHTML = data.map(item => `
+    <div class="menu-manage-item">
+      <div class="menu-manage-emoji">${item.emoji || '🍽️'}</div>
+      <div class="menu-manage-info">
+        <div class="menu-manage-name">${item.name}</div>
+        <div class="menu-manage-meta">₦${item.price?.toLocaleString()} • ${item.category || 'Uncategorized'}</div>
+        <div class="menu-manage-meta" style="margin-top:2px">${item.is_available ? '✅ Available' : '❌ Unavailable'}</div>
+      </div>
+      <div class="menu-manage-actions">
+        <div class="icon-btn" onclick="openEditModal('${item.id}','${item.name.replace(/'/g,"\\'")}','${item.emoji||'🍽️'}','${(item.description||'').replace(/'/g,"\\'")}',${item.price},'${item.category||''}')">✏️</div>
+        <div class="icon-btn" onclick="toggleAvailable('${item.id}',${item.is_available})">${item.is_available ? '🔴' : '🟢'}</div>
+        <div class="icon-btn del" onclick="deleteMenuItem('${item.id}')">🗑️</div>
+      </div>
+    </div>`).join('');
+}
+
+// UPDATE menu item
+function openEditModal(id, name, emoji, desc, price, cat) {
+  document.getElementById('edit-mi-id').value = id;
+  document.getElementById('edit-mi-name').value = name;
+  document.getElementById('edit-mi-emoji').value = emoji;
+  document.getElementById('edit-mi-desc').value = desc;
+  document.getElementById('edit-mi-price').value = price;
+  document.getElementById('edit-mi-cat').value = cat;
+  document.getElementById('edit-menu-modal').classList.add('show');
+}
+async function saveMenuEdit() {
+  const id = document.getElementById('edit-mi-id').value;
+  const updates = { name: document.getElementById('edit-mi-name').value, emoji: document.getElementById('edit-mi-emoji').value || '🍽️', description: document.getElementById('edit-mi-desc').value, price: parseInt(document.getElementById('edit-mi-price').value), category: document.getElementById('edit-mi-cat').value };
+  const { error } = await sb.from('menu_items').update(updates).eq('id', id);
+  if (error) { showToast('❌ Update failed'); return; }
+  closeEditModal(); showToast('✅ Item updated!'); loadMenuItems();
+}
+function closeEditModal() { document.getElementById('edit-menu-modal').classList.remove('show'); }
+
+// TOGGLE availability
+async function toggleAvailable(id, current) {
+  await sb.from('menu_items').update({ is_available: !current }).eq('id', id);
+  showToast(current ? '🔴 Item marked unavailable' : '🟢 Item marked available');
+  loadMenuItems();
+}
+
+// DELETE menu item
+async function deleteMenuItem(id) {
+  if (!confirm('Delete this menu item?')) return;
+  const { error } = await sb.from('menu_items').delete().eq('id', id);
+  if (error) { showToast('❌ Delete failed'); return; }
+  showToast('🗑️ Item deleted'); loadMenuItems();
+}
+
+// ══════════════════════════════════════════
+// ████████ CRUD: ORDER STATUS UPDATES ██████
+// ══════════════════════════════════════════
+
+// READ orders for restaurant dashboard
+async function loadDashOrders() {
+  if (!currentUser) return;
+  let query = sb.from('orders').select('*').order('created_at', { ascending: false }).limit(20);
+  if (currentRestaurantId) query = query.eq('restaurant_id', currentRestaurantId);
+  const { data } = await query;
+  const el = document.getElementById('live-orders');
+  if (!data || data.length === 0) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div>No orders yet</div>'; return; }
+
+  const statusClass = { pending:'s-pending', confirmed:'s-confirmed', preparing:'s-preparing', ready:'s-ready', delivered:'s-delivered' };
+  el.innerHTML = data.map(o => `
+    <div class="order-row">
+      <div class="order-row-info">
+        <div class="order-row-id">#${o.order_number || o.id?.slice(0,8)}</div>
+        <div class="order-row-meta">${o.customer_name || 'Customer'} • ₦${o.total?.toLocaleString()}</div>
+        <div class="order-row-meta">${o.delivery_address || ''}</div>
+      </div>
+      <span class="o-status ${statusClass[o.status] || 's-pending'}" onclick="openStatusModal('${o.id}','${o.order_number || o.id?.slice(0,8)}','${o.status}')">${o.status || 'pending'} ▾</span>
+    </div>`).join('');
+
+  // Stats
+  const today = data.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString());
+  const pending = data.filter(o => ['pending','confirmed','preparing'].includes(o.status));
+  document.getElementById('d-orders').textContent = today.length;
+  document.getElementById('d-revenue').textContent = '₦' + today.reduce((s,o) => s+(o.total||0), 0).toLocaleString();
+  document.getElementById('d-pending').textContent = pending.length;
+}
+
+// UPDATE order status
+function openStatusModal(orderId, orderNum, currentStatus) {
+  document.getElementById('status-order-id').value = orderId;
+  document.getElementById('status-modal-order').textContent = `Order #${orderNum} • Current: ${currentStatus}`;
+  document.getElementById('status-modal').classList.add('show');
+}
+async function updateStatus(newStatus) {
+  const orderId = document.getElementById('status-order-id').value;
+  const { error } = await sb.from('orders').update({ status: newStatus }).eq('id', orderId);
+  if (error) { showToast('❌ Update failed'); return; }
+  closeStatusModal();
+  showToast(`✅ Order marked as "${newStatus}"`);
+  loadDashOrders();
+}
+function closeStatusModal() { document.getElementById('status-modal').classList.remove('show'); }
+
+// ══════════════════════════════════════════
+// ████████ CRUD: ORDER HISTORY (Customer) ██
+// ══════════════════════════════════════════
+
+// READ customer order history
+async function loadOrderHistory() {
+  if (!currentUser) return;
+  const el = document.getElementById('orders-content');
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2)">Loading... 📦</div>';
+  const { data, error } = await sb.from('orders').select('*').eq('customer_id', currentUser.id).order('created_at', { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📦</div><div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:6px">No orders yet</div><div>Browse restaurants and place your first order!</div><br><button class="btn btn-accent" style="max-width:200px;margin:0 auto" onclick="showPage('home')">Order Now 🍔</button></div>`;
+    return;
+  }
+
+  const statusEmoji = { pending:'⏳', confirmed:'✅', preparing:'👨‍🍳', ready:'🔔', delivered:'🛵' };
+  const statusClass = { pending:'s-pending', confirmed:'s-confirmed', preparing:'s-preparing', ready:'s-ready', delivered:'s-delivered' };
+
+  el.innerHTML = data.map(o => {
+    const items = Array.isArray(o.items) ? o.items : [];
+    const itemSummary = items.map(i => `${i.qty}x ${i.name}`).join(', ');
+    const date = new Date(o.created_at).toLocaleDateString('en-NG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `
+    <div class="history-item">
+      <div class="history-header">
+        <div class="history-id">#${o.order_number || o.id?.slice(0,8)}</div>
+        <span class="o-status ${statusClass[o.status]||'s-pending'}">${statusEmoji[o.status]||'⏳'} ${o.status||'pending'}</span>
+      </div>
+      <div class="history-items">${itemSummary || 'Items not available'}</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px">📍 ${o.delivery_address || 'Address not saved'}</div>
+      <div class="history-footer">
+        <div style="font-size:11px;color:var(--text2)">${date}</div>
+        <div class="history-total">₦${o.total?.toLocaleString()}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// SAVE ORDER
+// ══════════════════════════════════════════
+async function saveOrder(orderData) {
+  const { data } = await sb.from('orders').insert({
+    customer_id: currentUser?.id,
+    restaurant_id: cart[0]?.restId || null,
+    items: cart,
+    subtotal: orderData.sub,
+    delivery_fee: orderData.del,
+    service_fee: orderData.fee,
+    total: orderData.total,
+    customer_name: document.getElementById('co-name').value,
+    customer_phone: document.getElementById('co-phone').value,
+    customer_email: document.getElementById('co-email').value,
+    delivery_address: document.getElementById('co-address').value,
+    notes: document.getElementById('co-notes').value,
+    order_number: 'QUBE-' + Date.now(),
+    payment_status: 'paid',
+    status: 'confirmed'
+  }).select().single();
+  return data;
+}
+
+// ══════════════════════════════════════════
+// GEO MATH & MAPS
+// ══════════════════════════════════════════
+function hav(a,b,c,d){const R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function dLabel(k){return k<1?`${Math.round(k*1000)}m`:`${k.toFixed(1)}km`;}
+function dTime(k){const m=Math.round(10+k*6);return `${m}–${m+10} min`;}
+const mMaps={};let fullMap=null,dashMap=null,dashMkr=null;
+function dotIcon(c='#E8451A'){return L.divIcon({html:`<div style="background:${c};width:12px;height:12px;border-radius:50%;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,className:'',iconSize:[12,12],iconAnchor:[6,6]});}
+function labelIcon(t){return L.divIcon({html:`<div style="background:#E8451A;color:white;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:700;font-family:sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3)">${t}</div>`,className:'',iconAnchor:[0,10]});}
+function initMiniMap(id,cid){if(mMaps[id])return;const r=allRestaurants.find(x=>x.id===id),el=document.getElementById(cid);if(!r||!el||!r.lat)return;const m=L.map(el,{center:[r.lat,r.lng],zoom:15,zoomControl:false,dragging:false,scrollWheelZoom:false,touchZoom:false,doubleClickZoom:false,attributionControl:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);L.marker([r.lat,r.lng],{icon:dotIcon()}).addTo(m);mMaps[id]=m;}
+function initFullMap(r){const el=document.getElementById('full-map');if(fullMap){fullMap.remove();fullMap=null;}if(!r.lat)return;fullMap=L.map(el,{center:[r.lat,r.lng],zoom:14,zoomControl:false,attributionControl:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(fullMap);L.marker([r.lat,r.lng],{icon:labelIcon(r.emoji+' '+r.name.split(' ')[0])}).addTo(fullMap);L.marker([USER_LOC.lat,USER_LOC.lng],{icon:dotIcon('#2563EB')}).addTo(fullMap).bindPopup('📍 You');L.polyline([[r.lat,r.lng],[USER_LOC.lat,USER_LOC.lng]],{color:'#E8451A',weight:2,dashArray:'6,6',opacity:.6}).addTo(fullMap);fullMap.fitBounds([[r.lat,r.lng],[USER_LOC.lat,USER_LOC.lng]],{padding:[28,28]});const d=hav(USER_LOC.lat,USER_LOC.lng,r.lat,r.lng);document.getElementById('map-dist').textContent=dLabel(d);document.getElementById('map-time').textContent=dTime(d);document.getElementById('map-addr').textContent='📌 '+(r.address||'Owerri');}
+function initDashMap(){const el=document.getElementById('dash-map');if(!el||dashMap)return;dashMap=L.map(el,{center:[5.4841,7.0350],zoom:13,zoomControl:false,attributionControl:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(dashMap);}
+
+// GEOCODING
+let gT=null,gC=null;
+function onAddrType(){clearTimeout(gT);const v=document.getElementById('rest-addr').value;if(v.length<4){hideSugs();return;}gT=setTimeout(()=>geocode(v),650);}
+async function geocode(q){try{const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q+', Owerri, Nigeria')}&format=json&limit=4&countrycodes=ng`);showSugs(await r.json());}catch{setGeo('Network error','err');}}
+function showSugs(list){const el=document.getElementById('loc-sugs');if(!list.length){el.style.display='none';return;}el.style.display='block';el.innerHTML=list.map(r=>`<div class="loc-sug" onclick="pickSug('${r.display_name.replace(/'/g,"\\'")}',${r.lat},${r.lon})">📍 ${r.display_name}</div>`).join('');}
+function hideSugs(){document.getElementById('loc-sugs').style.display='none';}
+function pickSug(name,lat,lng){document.getElementById('rest-addr').value=name;gC={lat:parseFloat(lat),lng:parseFloat(lng)};hideSugs();setGeo('✅ Location found! Click Save.','ok');}
+function setGeo(msg,type){const el=document.getElementById('geo-status');el.textContent=msg;el.className=type==='ok'?'geo-ok':'geo-err';}
+async function saveLocation(){if(!gC){setGeo('⚠️ Pick address from dropdown','err');return;}if(!dashMap)initDashMap();if(dashMkr)dashMap.removeLayer(dashMkr);dashMkr=L.marker([gC.lat,gC.lng],{icon:labelIcon('🍽️ Your Restaurant')}).addTo(dashMap);dashMap.setView([gC.lat,gC.lng],16,{animate:true});if(currentUser&&currentRestaurantId){await sb.from('restaurants').update({lat:gC.lat,lng:gC.lng,address:document.getElementById('rest-addr').value}).eq('id',currentRestaurantId);}setGeo('✅ Pinned! Customers can now find you.','ok');showToast('📍 Location saved!');}
+
+// ══════════════════════════════════════════
+// RESTAURANT LIST
+// ══════════════════════════════════════════
+function renderList(list){
+  const el=document.getElementById('restaurant-list');
+  if(!list.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">No restaurants found 😢</div>';return;}
+  el.innerHTML=list.map(r=>{const d=(r.lat&&r.lng)?hav(USER_LOC.lat,USER_LOC.lng,r.lat,r.lng):3;return `
+    <div class="rest-card" onclick="openRest('${r.id}')">
+      <div class="rest-top">
+        <div class="rest-emoji-box">${r.emoji||'🍽️'}${r.badge?`<div class="rest-badge">${r.badge}</div>`:''}</div>
+        <div class="rest-info">
+          <div class="rest-name">${r.name}</div>
+          <div class="rest-meta"><span>⭐${r.rating||'5.0'}</span><span>🕐${dTime(d)}</span><span>🛵₦${(r.delivery_fee||350).toLocaleString()}</span></div>
+          <div class="rest-tags">${(r.tags||['Food']).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        </div>
+      </div>
+      ${r.lat?`<div class="mini-map-wrap"><div class="mini-map" id="mm-${r.id}"></div><div class="mini-map-overlay"><div class="map-chip">📍 ${dLabel(d)}</div><div class="map-chip">🕐 ${dTime(d)}</div></div></div>`:''}
+    </div>`}).join('');
+  setTimeout(()=>list.forEach(r=>r.lat&&initMiniMap(r.id,'mm-'+r.id)),80);
+}
+let curCat='all';
+function filterCat(c,el){curCat=c;document.querySelectorAll('.cat').forEach(x=>x.classList.remove('active'));el.classList.add('active');applyFilters();}
+function applyFilters(){const q=document.getElementById('search-input').value.toLowerCase();let list=allRestaurants;if(curCat!=='all')list=list.filter(r=>(r.cats||[]).includes(curCat)||(r.category||'').toLowerCase().includes(curCat));if(q)list=list.filter(r=>r.name.toLowerCase().includes(q)||(r.tags||[]).some(t=>t.toLowerCase().includes(q)));renderList(list);}
+
+// ══════════════════════════════════════════
+// DETAIL
+// ══════════════════════════════════════════
+function openRest(id){
+  const r=allRestaurants.find(x=>String(x.id)===String(id));if(!r)return;
+  const d=(r.lat&&r.lng)?hav(USER_LOC.lat,USER_LOC.lng,r.lat,r.lng):3;
+  document.getElementById('detail-emoji').textContent=r.emoji||'🍽️';
+  document.getElementById('detail-name').textContent=r.name;
+  document.getElementById('detail-meta').innerHTML=`<span>⭐${r.rating||'5.0'}</span><span>📍${dLabel(d)}</span><span>🕐${dTime(d)}</span><span>🛵₦${(r.delivery_fee||350).toLocaleString()}</span>`;
+  const menu=r.menu||[];
+  document.getElementById('menu-section').innerHTML=menu.length?menu.map(s=>`
+    <div class="menu-cat-title">${s.cat}</div>
+    <div class="menu-items">${(s.items||[]).map(i=>`
+      <div class="menu-item">
+        <div class="menu-item-emoji">${i.emoji||'🍽️'}</div>
+        <div class="menu-item-info"><div class="menu-item-name">${i.name}</div><div class="menu-item-desc">${i.description||i.desc||''}</div><div class="menu-item-price">₦${(i.price||0).toLocaleString()}</div></div>
+        <button class="add-btn" onclick="addCart('${r.name}','${r.id}','${i.name}',${i.price||0},'${i.emoji||'🍽️'}')">+</button>
+      </div>`).join('')}
+    </div>`).join(''):'<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">Menu coming soon 🍽️</div>';
+  showPage('detail');
+  if(r.lat)setTimeout(()=>initFullMap(r),150);
+}
+
+// ══════════════════════════════════════════
+// CART
+// ══════════════════════════════════════════
+function addCart(rest,restId,name,price,emoji){if(!currentUser){showToast('⚠️ Please log in first');showPage('login');return;}const ex=cart.find(i=>i.name===name&&i.rest===rest);if(ex)ex.qty++;else cart.push({rest,restId,name,price,emoji,qty:1});updateCount();showToast(`${emoji} Added!`);}
+function updateCount(){document.getElementById('cart-count').textContent=cart.reduce((s,i)=>s+i.qty,0);}
+function chQty(idx,d){cart[idx].qty+=d;if(cart[idx].qty<=0)cart.splice(idx,1);updateCount();renderCart();}
+function tots(){const s=cart.reduce((a,i)=>a+i.price*i.qty,0);const dl=350,f=Math.round(s*.08);return{sub:s,del:dl,fee:f,total:s+dl+f};}
+function renderCart(){
+  const el=document.getElementById('cart-content');
+  if(!cart.length){el.innerHTML=`<div class="cart-empty"><div class="cart-empty-icon">🛒</div><h3>Cart is empty</h3><p>Browse restaurants and add food!</p></div>`;return;}
+  const{sub,del,fee,total}=tots();
+  el.innerHTML=`
+    <div class="cart-items">${cart.map((i,idx)=>`
+      <div class="cart-item"><div class="cart-item-emoji">${i.emoji}</div>
+        <div class="cart-item-info"><div class="cart-item-name">${i.name}</div><div class="cart-item-rest">${i.rest}</div><div class="cart-item-price">₦${(i.price*i.qty).toLocaleString()}</div></div>
+        <div class="qty-ctrl"><div class="qty-btn" onclick="chQty(${idx},-1)">−</div><div class="qty-num">${i.qty}</div><div class="qty-btn" onclick="chQty(${idx},1)">+</div></div>
+      </div>`).join('')}
+    </div>
+    <div class="order-summary">
+      <div class="summary-row"><span>Subtotal</span><span>₦${sub.toLocaleString()}</span></div>
+      <div class="summary-row"><span>Delivery</span><span>₦${del.toLocaleString()}</span></div>
+      <div class="summary-row"><span>Service (8%)</span><span>₦${fee.toLocaleString()}</span></div>
+      <div class="summary-row"><span class="summary-total">Total</span><span class="summary-total">₦${total.toLocaleString()}</span></div>
+    </div>
+    <div style="padding:0 14px 14px;display:flex;flex-direction:column;gap:9px">
+      <button class="btn btn-accent" onclick="showPage('checkout')">Checkout →</button>
+      <button class="btn btn-outline" onclick="showPage('home')">Add More</button>
+    </div>`;
+}
+function renderCheckout(){const{sub,del,fee,total}=tots();document.getElementById('checkout-summary').innerHTML=`<div class="order-summary"><div class="summary-row"><span>Items (${cart.reduce((s,i)=>s+i.qty,0)})</span><span>₦${sub.toLocaleString()}</span></div><div class="summary-row"><span>Delivery + Service</span><span>₦${(del+fee).toLocaleString()}</span></div><div class="summary-row"><span class="summary-total">Total</span><span class="summary-total">₦${total.toLocaleString()}</span></div></div>`;}
+
+// ══════════════════════════════════════════
+// PAYMENT
+// ══════════════════════════════════════════
+function initiatePayment(){if(!document.getElementById('co-name').value||!document.getElementById('co-phone').value||!document.getElementById('co-email').value||!document.getElementById('co-address').value){showToast('⚠️ Fill all required fields');return;}const{total}=tots();document.getElementById('modal-amt').textContent=`Pay ₦${total.toLocaleString()} securely via Flutterwave`;document.getElementById('pay-modal').classList.add('show');}
+async function processPayment(){
+  closeModal();
+  // 🔌 ACTIVATE: FlutterwaveCheckout({ public_key:"YOUR_FLW_KEY", tx_ref:"QUBE-"+Date.now(), amount:tots().total, currency:"NGN", customer:{email:...,name:...}, callback: async(r)=>{ if(r.status==="successful") await completeOrder(); } });
+  await completeOrder();
+}
+async function completeOrder(){const orderData=tots();const order=await saveOrder(orderData);const orderId=order?.order_number||'#QUBE-'+Math.floor(10000+Math.random()*90000);document.getElementById('order-id-display').textContent=orderId;cart=[];updateCount();showPage('success');}
+function closeModal(){document.getElementById('pay-modal').classList.remove('show');}
+
+// ══════════════════════════════════════════
+// DASHBOARD TABS
+// ══════════════════════════════════════════
+function switchDashTab(tab, el) {
+  document.querySelectorAll('#page-dashboard .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['orders','menu','location'].forEach(t => document.getElementById(`dash-tab-${t}`).style.display = t === tab ? 'block' : 'none');
+  if (tab === 'orders') loadDashOrders();
+  if (tab === 'menu') { loadMenuItems(); }
+  if (tab === 'location') { setTimeout(initDashMap, 100); }
+}
+
+// ══════════════════════════════════════════
+// PAGE ROUTING
+// ══════════════════════════════════════════
+const APP_PAGES=['home','detail','cart','checkout','success','dashboard','profile','orders'];
+function showPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const isApp=APP_PAGES.includes(p);
+  document.getElementById('app-nav').style.display=isApp?'flex':'none';
+  document.getElementById('bottom-nav').style.display=isApp?'flex':'none';
+  if(isApp){document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));const nm={home:'nav-home',cart:'nav-cart',dashboard:'nav-dash',profile:'nav-profile',orders:'nav-orders'};if(nm[p])document.getElementById(nm[p]).classList.add('active');}
+  if(p==='cart')renderCart();
+  if(p==='checkout')renderCheckout();
+  if(p==='orders')loadOrderHistory();
+  window.scrollTo(0,0);
+}
+function showDash(){
+  if(currentProfile&&currentProfile.role==='customer'){showToast('⚠️ Dashboard is for restaurant owners');return;}
+  showPage('dashboard');loadDashOrders();
+}
+function enterApp(){document.getElementById('app-nav').style.display='flex';document.getElementById('bottom-nav').style.display='flex';showPage('home');loadRestaurants();showToast(`👋 Welcome!`);}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.querySelectorAll('.theme-btn,#theme-btn').forEach(b=>b.textContent=d?'🌙':'☀️');}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',4000);}
+function setLoading(btnId,on,label){const b=document.getElementById(btnId);if(b){b.disabled=on;if(on)b.textContent='Please wait...';else b.textContent=label;}}
+
+// BOOT
+init();
+</script>
+</body>
+</html>
